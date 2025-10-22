@@ -1,0 +1,147 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>Okaki 逆再生対応動画プレイヤー - 第3回 Matz葉がにロボコン</title>
+</head><body>
+<header>
+<h1>Okaki 逆再生対応動画プレイヤー</h1>
+第3回 Matz葉がにロボコン
+</header>
+<div id="div_container">
+  <video id=video src="./matz.mp4"></video>
+  <video id=video_rev src="./matz.rev.mp4"></video>
+</div>
+<input id="seek" type="range" step="0.001" value="0">
+<div id="btn_container">
+  <button id="btn_play">▶️ PLAY</button>
+  <button id="btn_stop">⏹️ STOP</button>
+  <button id="btn_rev">◀️ REVERSE</button>
+</div>
+
+<footer>
+大会: <a href=https://www.shimane-oss.org/kani-robo/>Matz葉がにロボコン|かにロボ連盟 ご当地こども向けプログラミングコンテスト</a><br>
+<a href=https://github.com/code4fukui/matzbagani-robocon/>src on GitHub</a><br>
+</footer>
+
+<script type="module">
+let flgforward = true;
+
+// つまみ操作（マウス/タッチ）中はスクラブして、離したら反映
+let isScrubbing = false;
+
+video.addEventListener('loadedmetadata', () => {
+  seek.max = video.duration || 0;
+});
+
+// input: つまみを動かすたびにプレビュー（スクラブ）
+seek.addEventListener('input', () => {
+  isScrubbing = true;
+  // つまみ位置に「プレビュー再生位置」を合わせるだけ（静止画プレビュー）
+  if (flgforward) {
+    video.currentTime = Number(seek.value);
+  } else {
+    video_rev.currentTime = video_rev.duration - Number(seek.value);
+  }
+});
+
+// change: 決定（モバイルSafari等では input と change の両方が必要なことあり）
+seek.addEventListener('change', () => { 
+  if (flgforward) {
+    video.currentTime = Number(seek.value);
+  } else {
+    video_rev.currentTime = video_rev.duration - Number(seek.value);
+  }
+  isScrubbing = false;
+});
+
+video.addEventListener('timeupdate', () => {
+  if (!isScrubbing) {
+    seek.value = video.currentTime;
+    if (flgforward) {
+      video_rev.currentTime = video_rev.duration - video.currentTime;
+    }
+  }
+});
+video_rev.addEventListener('timeupdate', () => {
+  if (!isScrubbing) {
+    seek.value = video_rev.duration - video_rev.currentTime;
+    if (!flgforward) {
+      video.currentTime = video.duration - video_rev.currentTime;
+    }
+  }
+});
+
+
+btn_play.onclick = () => {
+  if (!flgforward) {
+    video_rev.pause();
+    const t = video_rev.currentTime;
+    const nt = video.duration - t;
+    video_rev.style.display = "none";
+    video.currentTime = nt;
+    flgforward = true;
+  }
+  if (video.paused) {
+    video.style.display = "inline-block";
+    video.play();
+  }
+};
+btn_rev.onclick = () => {
+  if (flgforward) {
+    video.pause();
+    const t = video.currentTime;
+    const nt = video.duration - t;
+    video.style.display = "none";
+    video_rev.currentTime = nt;
+    flgforward = false;
+  }
+  if (video_rev.paused) {
+    video_rev.style.display = "inline-block";
+    video_rev.play();
+  }
+};
+btn_stop.onclick = () => {
+  if (flgforward) {
+    video.pause();
+  } else {
+    video_rev.pause();
+  }
+};
+</script>
+<style>
+body {
+  margin: 0;
+}
+header {
+  padding: 1em;
+  background-color: gray;
+  color: white;
+  text-align: center;
+}
+
+#div_container {
+  position: relative;
+}
+#div_container > video {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100vw;
+}
+#video_rev {
+  display: none;
+}
+#btn_container {
+  text-align: center;
+  margin-top: 1em;
+}
+/* range の見た目（シンプル） */
+input[type="range"]{ width:100%; height: 8px; border-radius: 999px; appearance:none; background: #ddd; }
+input[type="range"]::-webkit-slider-thumb{ appearance:none; width:16px; height:16px; border-radius:50%; background:#000; cursor:pointer; }
+input[type="range"]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:#000; border:0; cursor:pointer; }
+
+footer {
+  margin: 2em 1em 1em 1em;
+  text-align: center;  
+}
+
+</style>
+</body></html>
